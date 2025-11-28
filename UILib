@@ -1,5 +1,5 @@
 -- UILib.lua
--- Full UI Library with tab + button layouts
+-- Full UI Library with tabs, buttons, sliders, dropdowns, toggles, color pickers, labels, paragraphs, inputs, and keybinds
 
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
@@ -108,7 +108,7 @@ function UILibrary:MakeWindow(titleText)
 
     local tabList = Instance.new("UIListLayout", leftTab)
     tabList.SortOrder = Enum.SortOrder.LayoutOrder
-    tabList.Padding = UDim.new(0,4) -- small spacing for tab buttons
+    tabList.Padding = UDim.new(0,4)
 
     -- Right content panel
     local rightPanel = Instance.new("Frame", bottom)
@@ -147,7 +147,6 @@ function UILibrary:MakeWindow(titleText)
     local Window = {}
 
     function Window:MakeTab(name)
-        -- Tab button (small height)
         local tabButton = Instance.new("TextButton", leftTab)
         tabButton.Size = UDim2.new(1,-10,0,28)
         tabButton.BackgroundColor3 = Color3.fromRGB(40,40,40)
@@ -157,7 +156,6 @@ function UILibrary:MakeWindow(titleText)
         tabButton.TextSize = 14
         Instance.new("UICorner", tabButton).CornerRadius = UDim.new(0,6)
 
-        -- Tab content container
         local tabContent = Instance.new("Frame", rightPanel)
         tabContent.Size = UDim2.new(1,-12,1,-12)
         tabContent.Position = UDim2.new(0,6,0,6)
@@ -165,7 +163,6 @@ function UILibrary:MakeWindow(titleText)
         tabContent.Visible = false
         Instance.new("UICorner", tabContent).CornerRadius = UDim.new(0,6)
 
-        -- Pretty layout for buttons
         local listLayout = Instance.new("UIListLayout", tabContent)
         listLayout.SortOrder = Enum.SortOrder.LayoutOrder
         listLayout.Padding = UDim.new(0,8)
@@ -180,10 +177,11 @@ function UILibrary:MakeWindow(titleText)
         end)
 
         local Tab = {}
+
         function Tab:AddButton(opts)
             opts = opts or {}
             local btn = Instance.new("TextButton", tabContent)
-            btn.Size = UDim2.new(0.9,0,0,35) -- wide, consistent buttons
+            btn.Size = UDim2.new(0.9,0,0,35)
             btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
             btn.Text = opts.Name or "Button"
             btn.Font = Enum.Font.GothamBold
@@ -198,6 +196,149 @@ function UILibrary:MakeWindow(titleText)
             end)
 
             return btn
+        end
+
+        function Tab:AddSlider(opts)
+            local frame = Instance.new("Frame", tabContent)
+            frame.Size = UDim2.new(0.9,0,0,50)
+            frame.BackgroundColor3 = Color3.fromRGB(40,40,40)
+            Instance.new("UICorner", frame).CornerRadius = UDim.new(0,6)
+
+            local label = Instance.new("TextLabel", frame)
+            label.Size = UDim2.new(1,0,0.5,0)
+            label.BackgroundTransparency = 1
+            label.Text = opts.Name or "Slider"
+            label.TextColor3 = Color3.fromRGB(255,255,255)
+            label.Font = Enum.Font.GothamBold
+            label.TextSize = 14
+
+            local slider = Instance.new("TextButton", frame)
+            slider.Size = UDim2.new(1,-20,0.5,-5)
+            slider.Position = UDim2.new(0,10,0.5,0)
+            slider.BackgroundColor3 = Color3.fromRGB(60,60,60)
+            slider.Text = tostring(opts.Default or opts.Min or 0)
+            Instance.new("UICorner", slider).CornerRadius = UDim.new(0,6)
+
+            slider.MouseButton1Click:Connect(function()
+                local val = tonumber(slider.Text) or opts.Default or 0
+                val = val + 1
+                if val > (opts.Max or 100) then val = opts.Min or 0 end
+                slider.Text = tostring(val)
+                if opts.Callback then opts.Callback(val) end
+            end)
+        end
+
+        function Tab:AddDropdown(opts)
+            local dd = Instance.new("TextButton", tabContent)
+            dd.Size = UDim2.new(0.9,0,0,35)
+            dd.BackgroundColor3 = Color3.fromRGB(50,50,50)
+            dd.Text = opts.Default or opts.Options[1]
+            dd.Font = Enum.Font.GothamBold
+            dd.TextColor3 = Color3.fromRGB(255,255,255)
+            dd.TextSize = 14
+            Instance.new("UICorner", dd).CornerRadius = UDim.new(0,6)
+
+            dd.MouseButton1Click:Connect(function()
+                local nextIndex = table.find(opts.Options, dd.Text) or 1
+                nextIndex = nextIndex % #opts.Options + 1
+                dd.Text = opts.Options[nextIndex]
+                if opts.Callback then opts.Callback(dd.Text) end
+            end)
+        end
+
+        function Tab:AddToggle(opts)
+            local btn = Instance.new("TextButton", tabContent)
+            btn.Size = UDim2.new(0.9,0,0,35)
+            btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+            btn.Text = (opts.Default and "[X] " or "[ ] ") .. (opts.Name or "Toggle")
+            btn.Font = Enum.Font.GothamBold
+            btn.TextColor3 = Color3.fromRGB(255,255,255)
+            btn.TextSize = 14
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
+
+            local state = opts.Default or false
+            btn.MouseButton1Click:Connect(function()
+                state = not state
+                btn.Text = (state and "[X] " or "[ ] ") .. (opts.Name or "Toggle")
+                if opts.Callback then opts.Callback(state) end
+            end)
+        end
+
+        function Tab:AddColorPicker(opts)
+            local btn = Instance.new("TextButton", tabContent)
+            btn.Size = UDim2.new(0.9,0,0,35)
+            btn.BackgroundColor3 = opts.Default or Color3.fromRGB(255,0,0)
+            btn.Text = opts.Name or "Color Picker"
+            btn.Font = Enum.Font.GothamBold
+            btn.TextColor3 = Color3.fromRGB(255,255,255)
+            btn.TextSize = 14
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
+
+            btn.MouseButton1Click:Connect(function()
+                local newColor = Color3.fromRGB(math.random(0,255),math.random(0,255),math.random(0,255))
+                btn.BackgroundColor3 = newColor
+                if opts.Callback then opts.Callback(newColor) end
+            end)
+        end
+
+        function Tab:AddLabel(text)
+            local lbl = Instance.new("TextLabel", tabContent)
+            lbl.Size = UDim2.new(0.9,0,0,25)
+            lbl.BackgroundTransparency = 1
+            lbl.Text = text
+            lbl.TextColor3 = Color3.fromRGB(255,255,255)
+            lbl.Font = Enum.Font.GothamBold
+            lbl.TextSize = 14
+            return lbl
+        end
+
+        function Tab:AddParagraph(title, body)
+            local frame = Instance.new("Frame", tabContent)
+            frame.Size = UDim2.new(0.9,0,0,60)
+            frame.BackgroundColor3 = Color3.fromRGB(40,40,40)
+            Instance.new("UICorner", frame).CornerRadius = UDim.new(0,6)
+
+            local lbl = Instance.new("TextLabel", frame)
+            lbl.Size = UDim2.new(1,0,1,0)
+            lbl.BackgroundTransparency = 1
+            lbl.Text = title.."\n"..body
+            lbl.TextColor3 = Color3.fromRGB(255,255,255)
+            lbl.Font = Enum.Font.Gotham
+            lbl.TextSize = 14
+        end
+
+        function Tab:AddAdaptiveInput(opts)
+            local box = Instance.new("TextBox", tabContent)
+            box.Size = UDim2.new(0.9,0,0,35)
+            box.BackgroundColor3 = Color3.fromRGB(50,50,50)
+            box.Text = ""
+            box.PlaceholderText = opts.Placeholder or "Type..."
+            box.Font = Enum.Font.Code
+            box.TextColor3 = Color3.fromRGB(255,255,255)
+            box.TextSize = 14
+            Instance.new("UICorner", box).CornerRadius = UDim.new(0,6)
+
+            box.FocusLost:Connect(function()
+                if opts.Callback then opts.Callback(box.Text) end
+            end)
+        end
+
+        function Tab:AddKeybind(opts)
+            local btn = Instance.new("TextButton", tabContent)
+            btn.Size = UDim2.new(0.9,0,0,35)
+            btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+            btn.Text = "Keybind: "..(opts.Default and opts.Default.Name or "None")
+            btn.Font = Enum.Font.GothamBold
+            btn.TextColor3 = Color3.fromRGB(255,255,255)
+            btn.TextSize = 14
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
+
+            local key = opts.Default or Enum.KeyCode.Unknown
+            UIS.InputBegan:Connect(function(input, gp)
+                if input.KeyCode == key then
+                    if opts.Callback then opts.Callback(key) end
+                end
+            end)
         end
 
         return Tab
