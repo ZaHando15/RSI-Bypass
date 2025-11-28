@@ -184,4 +184,26 @@ function UILibrary:MakeWindow(titleText)
             opts = opts or {}
             local btn = Instance.new("TextButton", tabContent)
             btn.Size = UDim2.new(0.9,0,0,35) -- wide, consistent buttons
-            btn.BackgroundColor3
+            btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+            btn.Text = opts.Name or "Button"
+            btn.Font = Enum.Font.GothamBold
+            btn.TextColor3 = Color3.fromRGB(255,255,255)
+            btn.TextSize = 14
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
+
+            btn.MouseButton1Click:Connect(function()
+                if typeof(opts.Callback) == "function" then
+                    opts.Callback()
+                end
+            end)
+
+            return btn
+        end
+
+        return Tab
+    end
+
+    return Window
+end
+
+return UILibrary
