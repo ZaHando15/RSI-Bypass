@@ -1,5 +1,5 @@
--- source.lua
--- Full UI Library
+-- UILib.lua
+-- Full UI Library with tab + button layouts
 
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
@@ -108,7 +108,7 @@ function UILibrary:MakeWindow(titleText)
 
     local tabList = Instance.new("UIListLayout", leftTab)
     tabList.SortOrder = Enum.SortOrder.LayoutOrder
-    tabList.Padding = UDim.new(0,5)
+    tabList.Padding = UDim.new(0,4) -- small spacing for tab buttons
 
     -- Right content panel
     local rightPanel = Instance.new("Frame", bottom)
@@ -147,8 +147,9 @@ function UILibrary:MakeWindow(titleText)
     local Window = {}
 
     function Window:MakeTab(name)
+        -- Tab button (small height)
         local tabButton = Instance.new("TextButton", leftTab)
-        tabButton.Size = UDim2.new(1,-10,0,30)
+        tabButton.Size = UDim2.new(1,-10,0,28)
         tabButton.BackgroundColor3 = Color3.fromRGB(40,40,40)
         tabButton.Text = name
         tabButton.Font = Enum.Font.GothamBold
@@ -156,12 +157,20 @@ function UILibrary:MakeWindow(titleText)
         tabButton.TextSize = 14
         Instance.new("UICorner", tabButton).CornerRadius = UDim.new(0,6)
 
+        -- Tab content container
         local tabContent = Instance.new("Frame", rightPanel)
         tabContent.Size = UDim2.new(1,-12,1,-12)
         tabContent.Position = UDim2.new(0,6,0,6)
         tabContent.BackgroundColor3 = Color3.fromRGB(20,20,20)
         tabContent.Visible = false
         Instance.new("UICorner", tabContent).CornerRadius = UDim.new(0,6)
+
+        -- Pretty layout for buttons
+        local listLayout = Instance.new("UIListLayout", tabContent)
+        listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        listLayout.Padding = UDim.new(0,8)
+        listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        listLayout.VerticalAlignment = Enum.VerticalAlignment.Top
 
         tabButton.MouseButton1Click:Connect(function()
             for _, child in ipairs(rightPanel:GetChildren()) do
@@ -174,28 +183,5 @@ function UILibrary:MakeWindow(titleText)
         function Tab:AddButton(opts)
             opts = opts or {}
             local btn = Instance.new("TextButton", tabContent)
-            btn.Size = UDim2.new(0,150,0,30)
-            btn.Position = UDim2.new(0,10,0,10)
-            btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-            btn.Text = opts.Name or "Button"
-            btn.Font = Enum.Font.GothamBold
-            btn.TextColor3 = Color3.fromRGB(255,255,255)
-            btn.TextSize = 14
-            Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
-
-            btn.MouseButton1Click:Connect(function()
-                if typeof(opts.Callback) == "function" then
-                    opts.Callback()
-                end
-            end)
-
-            return btn
-        end
-
-        return Tab
-    end
-
-    return Window
-end
-
-return UILibrary
+            btn.Size = UDim2.new(0.9,0,0,35) -- wide, consistent buttons
+            btn.BackgroundColor3
