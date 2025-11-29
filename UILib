@@ -1,4 +1,4 @@
--- BEAUTIFUL UI LIBRARY v2 | Dual-Pane Layout + Grid System
+-- BEAUTIFUL UI LIBRARY v2 | Dual-Pane Layout + Grid System + Functions Panel
 local UILibrary = {}
 UILibrary.__index = UILibrary
 
@@ -7,7 +7,7 @@ local UIS = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 
--- PRESERVED CONFIG (exactly as in UISave)
+-- PRESERVED CONFIG (exactly as in UISave) with additions
 local CONFIG = {
     Colors = {
         Background = Color3.fromRGB(25, 27, 30),
@@ -25,7 +25,8 @@ local CONFIG = {
         Height = 450,
         TopBar = 40,
         TabWidth = 130,
-        CornerRadius = 14
+        CornerRadius = 14,
+        FunctPanelWidth = 220 -- NEW: Width of functions panel
     },
     Animation = {
         Speed = 0.3,
@@ -106,7 +107,7 @@ function Window:new(name, size, position)
     topGradient.Parent = self.TopBar
     
     self.Title = Instance.new("TextLabel")
-    self.Title.Size = UDim2.new(1, -100, 1, 0)
+    self.Title.Size = UDim2.new(1, -150, 1, 0) -- Adjusted to make room for Help button
     self.Title.Position = UDim2.new(0, 15, 0, 0)
     self.Title.BackgroundTransparency = 1
     self.Title.Text = name
@@ -160,6 +161,24 @@ function Window:new(name, size, position)
     btnCorner.Parent = self.CloseBtn
     btnCorner:Clone().Parent = self.MinBtn
     
+    -- ===== NEW: Help Button for Functions Panel =====
+    self.HelpBtn = Instance.new("TextButton")
+    self.HelpBtn.Size = UDim2.new(0, 38, 0, 25)
+    self.HelpBtn.Position = UDim2.new(1, -125, 0.5, -12.5)
+    self.HelpBtn.BackgroundColor3 = CONFIG.Colors.Minimize
+    self.HelpBtn.BorderSizePixel = 0
+    self.HelpBtn.Text = "?"
+    self.HelpBtn.TextColor3 = CONFIG.Colors.Text
+    self.HelpBtn.TextSize = 16
+    self.HelpBtn.Font = Enum.Font.GothamBold
+    self.HelpBtn.AutoButtonColor = false
+    self.HelpBtn.ZIndex = 11
+    self.HelpBtn.Parent = self.TopBar
+    
+    local helpCorner = Instance.new("UICorner")
+    helpCorner.CornerRadius = UDim.new(0, 6)
+    helpCorner.Parent = self.HelpBtn
+    
     -- ===== DUAL-PANE LAYOUT =====
     -- Left Tabs Container
     self.TabsPanel = Instance.new("Frame")
@@ -190,6 +209,38 @@ function Window:new(name, size, position)
     self.GridLayout.SortOrder = Enum.SortOrder.LayoutOrder
     self.GridLayout.Parent = self.ContentPanel
     
+    -- ===== NEW: Functions Panel (Right Side) =====
+    self.FunctionsPanel = Instance.new("Frame")
+    self.FunctionsPanel.Name = "FunctionsPanel"
+    self.FunctionsPanel.Size = UDim2.new(0, CONFIG.Sizes.FunctPanelWidth, 1, -CONFIG.Sizes.TopBar)
+    self.FunctionsPanel.Position = UDim2.new(1, -CONFIG.Sizes.FunctPanelWidth, 0, CONFIG.Sizes.TopBar)
+    self.FunctionsPanel.BackgroundColor3 = CONFIG.Colors.Content
+    self.FunctionsPanel.BorderSizePixel = 0
+    self.FunctionsPanel.Visible = false
+    self.FunctionsPanel.Parent = self.MainFrame
+    
+    local funcScroll = Instance.new("ScrollingFrame")
+    funcScroll.Name = "FunctionScroll"
+    funcScroll.Size = UDim2.new(1, 0, 1, 0)
+    funcScroll.BackgroundTransparency = 1
+    funcScroll.BorderSizePixel = 0
+    funcScroll.ScrollBarThickness = 4
+    funcScroll.ScrollBarImageColor3 = CONFIG.Colors.Accent
+    funcScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    funcScroll.Parent = self.FunctionsPanel
+    
+    local funcTitle = Instance.new("TextLabel")
+    funcTitle.Name = "Title"
+    funcTitle.Size = UDim2.new(1, -10, 0, 30)
+    funcTitle.Position = UDim2.new(0, 5, 0, 5)
+    funcTitle.BackgroundTransparency = 1
+    funcTitle.Text = "Available Methods"
+    funcTitle.TextColor3 = CONFIG.Colors.Text
+    funcTitle.TextSize = 16
+    funcTitle.Font = Enum.Font.GothamSemibold
+    funcTitle.TextXAlignment = Enum.TextXAlignment.Left
+    funcTitle.Parent = funcScroll
+    
     -- State Management
     self.isMinimized = false
     self.originalSize = self.MainFrame.Size
@@ -205,6 +256,61 @@ function Window:new(name, size, position)
     tween(self.MainFrame, {Size = self.originalSize, BackgroundTransparency = 0}, 0.5):Play()
     
     return self
+end
+
+-- NEW: Method to populate functions panel
+function Window:PopulateFunctionsPanel()
+    local funcScroll = self.FunctionsPanel:FindFirstChild("FunctionScroll")
+    if not funcScroll then return end
+    
+    -- Clear existing methods except title
+    for _, child in pairs(funcScroll:GetChildren()) do
+        if child.Name ~= "Title" then
+            child:Destroy()
+        end
+    end
+    
+    local methods = {
+        {name = "Label(text)", desc = "Creates a text label\n\nUsage:\ntab:Label('Hello World')"},
+        {name = "Button(text, callback)", desc = "Creates a clickable button\n\nUsage:\ntab:Button('Click Me', function()\n    print('clicked')\nend)"},
+        {name = "Toggle(text, callback)", desc = "Creates a toggle switch\n\nUsage:\ntab:Toggle('Enabled', function(state)\n    print(state)\nend)"},
+        {name = "Slider(text, min, max, callback)", desc = "Creates a draggable slider\n\nUsage:\ntab:Slider('Volume', 0, 100, function(value)\n    print(value)\nend)"}
+    }
+    
+    local yOffset = 40
+    for _, method in ipairs(methods) do
+        local methodFrame = Instance.new("Frame")
+        methodFrame.Name = method.name
+        methodFrame.Size = UDim2.new(1, -10, 0, 85)
+        methodFrame.Position = UDim2.new(0, 5, 0, yOffset)
+        methodFrame.BackgroundTransparency = 1
+        methodFrame.Parent = funcScroll
+        
+        local nameLabel = Instance.new("TextLabel")
+        nameLabel.Size = UDim2.new(1, 0, 0, 20)
+        nameLabel.BackgroundTransparency = 1
+        nameLabel.Text = method.name
+        nameLabel.TextColor3 = CONFIG.Colors.Accent
+        nameLabel.TextSize = 13
+        nameLabel.Font = Enum.Font.Code
+        nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+        nameLabel.Parent = methodFrame
+        
+        local descLabel = Instance.new("TextLabel")
+        descLabel.Size = UDim2.new(1, 0, 0, 60)
+        descLabel.Position = UDim2.new(0, 0, 0, 20)
+        descLabel.BackgroundTransparency = 1
+        descLabel.Text = method.desc
+        descLabel.TextColor3 = CONFIG.Colors.Text
+        descLabel.TextSize = 11
+        descLabel.Font = Enum.Font.Gotham
+        descLabel.TextXAlignment = Enum.TextXAlignment.Left
+        descLabel.TextYAlignment = Enum.TextYAlignment.Top
+        descLabel.TextWrapped = true
+        descLabel.Parent = methodFrame
+        
+        yOffset = yOffset + 90
+    end
 end
 
 function Window:SetupEvents()
@@ -247,10 +353,12 @@ function Window:SetupEvents()
             tween(self.MainFrame, {Size = UDim2.new(0, CONFIG.Sizes.Width, 0, CONFIG.Sizes.TopBar)}, 0.3):Play()
             tween(self.ContentPanel, {BackgroundTransparency = 1}, 0.3):Play()
             tween(self.TabsPanel, {BackgroundTransparency = 1}, 0.3):Play()
+            tween(self.FunctionsPanel, {BackgroundTransparency = 1}, 0.3):Play()
         else
             tween(self.MainFrame, {Size = self.originalSize}, 0.3):Play()
             tween(self.ContentPanel, {BackgroundTransparency = 0}, 0.3):Play()
             tween(self.TabsPanel, {BackgroundTransparency = 0}, 0.3):Play()
+            tween(self.FunctionsPanel, {BackgroundTransparency = 0}, 0.3):Play()
         end
     end)
     
@@ -276,6 +384,23 @@ function Window:SetupEvents()
     
     self.MinBtn.MouseLeave:Connect(function()
         tween(self.MinBtn, {BackgroundColor3 = CONFIG.Colors.Minimize, Size = UDim2.new(0, 38, 0, 25)}, 0.2):Play()
+    end)
+    
+    -- ===== NEW: Help Button Events =====
+    self.HelpBtn.MouseButton1Click:Connect(function()
+        self.FunctionsPanel.Visible = not self.FunctionsPanel.Visible
+        local contentWidth = self.FunctionsPanel.Visible and 
+            CONFIG.Sizes.Width - CONFIG.Sizes.TabWidth - CONFIG.Sizes.FunctPanelWidth or
+            CONFIG.Sizes.Width - CONFIG.Sizes.TabWidth
+        tween(self.ContentPanel, {Size = UDim2.new(0, contentWidth, 1, -CONFIG.Sizes.TopBar)}, 0.3):Play()
+    end)
+    
+    self.HelpBtn.MouseEnter:Connect(function()
+        tween(self.HelpBtn, {BackgroundColor3 = CONFIG.Colors.Hover, Size = UDim2.new(0, 40, 0, 27)}, 0.2):Play()
+    end)
+    
+    self.HelpBtn.MouseLeave:Connect(function()
+        tween(self.HelpBtn, {BackgroundColor3 = CONFIG.Colors.Minimize, Size = UDim2.new(0, 38, 0, 25)}, 0.2):Play()
     end)
 end
 
@@ -335,6 +460,8 @@ function Window:Tab(name)
         tabData.IsActive = true
         tabBtn.BackgroundColor3 = CONFIG.Colors.Accent
         tabContent.Visible = true
+        -- Populate functions panel for first tab
+        self:PopulateFunctionsPanel()
     end
     
     -- Tab Click Logic
@@ -351,6 +478,9 @@ function Window:Tab(name)
         tabData.Button.BackgroundColor3 = CONFIG.Colors.Accent
         tabData.Content.Visible = true
         self.activeTab = tabData
+        
+        -- Populate functions panel
+        self:PopulateFunctionsPanel()
     end)
     
     -- Return Tab Object with Component Methods
